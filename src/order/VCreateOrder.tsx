@@ -5,8 +5,8 @@ import { VPage, Page, tv, List, LMR, FA } from 'tonva';
 import { COrder } from './COrder';
 import { OrderItem } from './Order';
 import { CartPackRow } from '../cart/Cart';
-
-const blankTime = 2000;
+import { GLOABLE } from 'ui';
+import classNames from 'classnames';
 
 export class VCreateOrder extends VPage<COrder> {
     @observable private useShippingAddress: boolean = true;
@@ -23,14 +23,14 @@ export class VCreateOrder extends VPage<COrder> {
     }
 
     private packsRow = (item: CartPackRow, index: number) => {
-        let { pack, quantity, price, currency } = item;
+        let { pack, quantity, price, retail, currency } = item;
 
         return <div key={index} className="px-2 py-2 border-top">
             <div className="d-flex align-items-center">
                 <div className="flex-grow-1"><b>{tv(pack)}</b></div>
                 <div className="w-12c mr-4 text-right">
-                    <span className="text-danger h5"><small>¥</small>{parseFloat((price * quantity).toFixed(2))}</span>
-                    <small className="text-muted">(¥{parseFloat(price.toFixed(2))} × {quantity})</small>
+                    <span className="text-danger h5"><small>¥</small>{parseFloat((retail * quantity).toFixed(2))}</span>
+                    <small className="text-muted">(¥{parseFloat(retail.toFixed(2))} × {quantity})</small>
                 </div>
             </div>
             <div>{this.controller.renderDeliveryTime(pack)}</div>
@@ -63,23 +63,28 @@ export class VCreateOrder extends VPage<COrder> {
         } else {
             let { id, code, discount, preferential, validitydate, isValid } = couponData;
             let { couponOffsetAmount, couponRemitted } = param;
-            let offsetUI, remittedUI;
-            if (couponOffsetAmount) {
-                offsetUI = <div className="d-flex flex-row justify-content-between">
-                    <div className="text-muted">折扣:</div>
-                    <div className="text-right text-danger"><small>¥</small>{couponOffsetAmount}</div>
-                </div>
-            }
-            if (couponRemitted) {
-                remittedUI = <div className="d-flex flex-row justify-content-between">
-                    <div className="text-muted">抵扣:</div>
-                    <div className="text-right text-danger"><small>¥</small>{couponRemitted}</div>
-                </div>
+            let offsetUI, remittedUI, noOffsetUI;
+            if (couponOffsetAmount || couponRemitted) {
+                if (couponOffsetAmount) {
+                    offsetUI = <div className="d-flex flex-row justify-content-between">
+                        <div className="text-muted">折扣:</div>
+                        <div className="text-right text-danger"><small>¥</small>{couponOffsetAmount.toFixed(2)}</div>
+                    </div>
+                }
+                if (couponRemitted) {
+                    remittedUI = <div className="d-flex flex-row justify-content-between">
+                        <div className="text-muted">抵扣:</div>
+                        <div className="text-right text-danger"><small>¥</small>{couponRemitted.toFixed(2)}</div>
+                    </div>
+                }
+            } else {
+                noOffsetUI = <div>此单无优惠</div>;
             }
             return <div className="mr-2">
                 <div className="text-success">{code.substr(0, 4)} {code.substr(4)}</div>
                 {offsetUI}
                 {remittedUI}
+                {noOffsetUI}
             </div>
         }
     });
@@ -90,7 +95,7 @@ export class VCreateOrder extends VPage<COrder> {
         let { shippingContact, invoiceContact, invoiceType, invoiceInfo } = orderData;
         if (!shippingContact) {
             this.shippingAddressIsBlank = true;
-            setTimeout(() => this.shippingAddressIsBlank = false, blankTime);
+            setTimeout(() => this.shippingAddressIsBlank = false, GLOABLE.TIPDISPLAYTIME);
             return;
         }
         if (!invoiceContact) {
@@ -99,13 +104,13 @@ export class VCreateOrder extends VPage<COrder> {
                 this.invoiceAddressIsBlank = false;
             } else {
                 this.invoiceAddressIsBlank = true;
-                setTimeout(() => this.invoiceAddressIsBlank = false, blankTime);
+                setTimeout(() => this.invoiceAddressIsBlank = false, GLOABLE.TIPDISPLAYTIME);
                 return;
             }
         }
         if (!invoiceType || !invoiceInfo) {
             this.invoiceIsBlank = true;
-            setTimeout(() => this.invoiceIsBlank = false, blankTime);
+            setTimeout(() => this.invoiceIsBlank = false, GLOABLE.TIPDISPLAYTIME);
             return;
         }
 
@@ -117,10 +122,11 @@ export class VCreateOrder extends VPage<COrder> {
         let { cApp, orderData, onSelectShippingContact, onSelectInvoiceContact, openMeInfo, onInvoiceInfoEdit, onCouponEdit } = this.controller;
         let { currentUser } = cApp;
         let fillMeInfo = <div onClick={openMeInfo} className="alert alert-warning text-primary py-1" role="alert">
-            点击完善您的个人信息
+            首次下单请点击完善您的个人信息
         </div>
-        if (currentUser.allowOrdering)
+        if (currentUser.allowOrdering) {
             fillMeInfo = null;
+        }
         let footer = <div className="d-block">
             {fillMeInfo}
             <div className="w-100 px-3">
@@ -128,11 +134,11 @@ export class VCreateOrder extends VPage<COrder> {
                     <span className="text-danger" style={{ fontSize: '1.8rem' }}><small>¥</small>{orderData.amount}</span>
                 </div>
                 <button type="button"
-                    className="btn btn-danger w-30"
+                    className={classNames('btn', 'w-30', { 'btn-danger': currentUser.allowOrdering, 'btn-secondary': !currentUser.allowOrdering })}
                     onClick={this.onSubmit} disabled={!currentUser.allowOrdering}>提交订单
                 </button>
             </div>
-        </div>;
+        </div >;
 
         let chevronRight = <FA name="chevron-right" className="cursor-pointer" />
         let shippingAddressBlankTip = this.shippingAddressIsBlank ?
