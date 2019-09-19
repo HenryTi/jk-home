@@ -1,26 +1,26 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
+import { NavView, nav, Page, Tabs, start, AppConfig } from 'tonva';
+import { CApp } from './CApp';
+import { jnkTop } from 'me/loginTop';
+import { tvs } from 'tvs';
 
-const App: React.FC = () => {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+const appConfig: AppConfig = {
+  appName: "百灵威系统工程部/cart",
+  version: "1.0.1",                   // 版本变化，缓存的uqs才会重载
+  tvs: tvs,
+  loginTop: jnkTop,
+};
+
+nav.setSettings(appConfig);
+
+class App extends React.Component {
+  private onLogined = async () => {
+    await start(CApp, appConfig);
+  }
+  public render() {
+    return <NavView onLogined={this.onLogined} notLogined={this.onLogined} />
+  }
 }
 
 export default App;
