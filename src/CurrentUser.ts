@@ -1,5 +1,5 @@
-import { User } from 'tonva';
-import { BoxId } from 'tonva';
+import { User, loadAppUqs } from 'tonva';
+import { Map, BoxId, CUq, Tuid } from 'tonva';
 import { observable, computed } from 'mobx';
 import { UQs } from './uqs';
 
@@ -56,8 +56,8 @@ export class WebUser {
     }
 
     private async loadWebUser() {
-        let { _user } = this;
-        if (_user !== undefined) {
+        let { id, _user } = this;
+        if (this._user !== undefined) {
             let webUser = await this.uqs.webuser.WebUser.load(this.id);
             if (webUser) {
                 let { firstName, gender, salutation, organizationName, departmentName } = webUser;
@@ -80,7 +80,7 @@ export class WebUser {
             }
             this.webUserSettings = await this.uqs.webuser.WebUserSetting.obj({ webUser: this.id }) || { webUser: this.id };
             let value = await this.uqs.webuser.WebUserCustomer.obj({ webUser: this.id });
-            if (value !== undefined) {
+            if (value != undefined) {
                 this.currentCustomer = new Customer(value.customer, this.uqs);
                 await this.currentCustomer.init();
             }
