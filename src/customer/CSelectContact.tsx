@@ -1,8 +1,8 @@
 //import * as React from 'react';
 import { observable } from 'mobx';
-import _ from 'lodash';
-import { Tuid, BoxId } from 'tonva';
-import { Controller, Context, nav } from 'tonva';
+//import _ from 'lodash';
+import { BoxId } from 'tonva';
+import { Context } from 'tonva';
 import { CUqBase } from '../CBase';
 import { VContactList } from './VContactList';
 //import { CCartApp } from 'CCartApp';
@@ -10,35 +10,14 @@ import { VContact } from './VContact';
 import { CAddress } from './CAddress';
 
 export abstract class CSelectContact extends CUqBase {
-    //protected cApp: CCartApp;
-    //private contactTuid: Tuid;
     fromOrderCreation: boolean;
 
     @observable userContacts: BoxId[] = [];
 
-    /*
-    constructor(cApp: CCartApp, res: any, fromOrderCreation: boolean) {
-        super(res);
-        this.cApp = cApp;
-        let { cUqCustomer } = cApp;
-
-        this.contactTuid = cUqCustomer.tuid('contact');
-        this.fromOrderCreation = fromOrderCreation;
-    }
-    */
-    /*
-    protected init() {
-        let { cUqCustomer } = this.cApp;
-
-        this.contactTuid = cUqCustomer.tuid('contact');
-        //this.fromOrderCreation = fromOrderCreation;
-    }
-    */
-
     async internalStart(fromOrderCreation: boolean/*contactType: ContactType*/) {
         this.fromOrderCreation = fromOrderCreation;
         let userContactMaps = await this.cApp.currentUser.getContacts();
-        this.userContacts = userContactMaps.map((v:any) => v.contact);
+        this.userContacts = userContactMaps.map(v => v.contact);
         this.openVPage(VContactList);
         if (this.fromOrderCreation && (!this.userContacts || this.userContacts.length === 0)) {
             this.onNewContact();
@@ -79,7 +58,7 @@ export abstract class CSelectContact extends CUqBase {
     }
 
     saveContact = async (contact: any) => {
-        let {Contact:contactTuid} = this.uqs.customer;
+        let { Contact: contactTuid } = this.uqs.customer;
         let newContact = await contactTuid.save(undefined, contact);
         let { id: newContactId } = newContact;
         let contactBox = contactTuid.boxId(newContactId);

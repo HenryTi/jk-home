@@ -5,6 +5,8 @@ import { About } from './about';
 import { observer } from 'mobx-react';
 import { EditMeInfo } from './EditMeInfo';
 import { CMe } from './CMe';
+import { AboutThisApp } from './aboutThisApp';
+import { appConfig } from 'configuration';
 
 export class VMe extends VPage<CMe> {
 
@@ -17,6 +19,7 @@ export class VMe extends VPage<CMe> {
     }
 
     private about = () => nav.push(<About />);
+    private aboutThisApp = () => nav.push(<AboutThisApp />);
 
     private changePassword = async () => {
         await nav.changePassword();
@@ -55,9 +58,13 @@ export class VMe extends VPage<CMe> {
                 <FA name="file-text-o" className="text-info fa-2x" />
                 <small>待付款</small>
             </div>
-            <div className="d-flex flex-column align-items-center" onClick={() => openMyOrders('all')}>
+            <div className="d-flex flex-column align-items-center" onClick={() => openMyOrders('processing')}>
                 <FA name="file-text-o" className="text-info fa-2x" />
-                <small>所有订单</small>
+                <small>待审核</small>
+            </div>
+            <div className="d-flex flex-column align-items-center" onClick={() => openMyOrders('completed')}>
+                <FA name="file-text-o" className="text-info fa-2x" />
+                <small>处理中</small>
             </div>
         </div>
     };
@@ -72,6 +79,14 @@ export class VMe extends VPage<CMe> {
                 onClick: this.about
             },
             '',
+            {
+                type: 'component',
+                component: <div className="w-100 d-flex justify-content-between" onClick={this.aboutThisApp}>
+                    <IconText iconClass="text-info mr-2" icon="smile-o" text="关于本APP" />
+                    <div className="py-2 small">V{appConfig.version}</div>
+                </div>,
+            },
+            ''
         ];
 
         let rows: Prop[];

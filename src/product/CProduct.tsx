@@ -12,7 +12,7 @@ import { VProductList } from './VProductList';
 import { LoaderProductChemicalWithPrices } from './itemLoader';
 import { ProductImage } from '../tools/productImage';
 import { VProductDelivery } from './VProductDelivery';
-import { VCartProuductView } from './VProductView';
+import { VCartProuductView, VProductPrice } from './VProductView';
 import { VChemicalInfo } from './VChemicalInfo';
 
 class PageProducts extends PageItems<any> {
@@ -40,10 +40,10 @@ class PageProducts extends PageItems<any> {
  *
  */
 export class CProduct extends CUqBase {
+    //cApp: CApp;
     pageProducts: PageProducts;
 
-    @observable inventoryAllocationContainer: { [packId: number]: any[] } = {};
-    @observable futureDeliveryTimeDescriptionContainer: { [productId: number]: string } = {};
+    @observable futureDeliveryTimeDescriptionContainer: { [cacheId: string]: string } = {};
     @observable chemicalInfoContainer: { [productId: number]: any } = {};
 
     protected async internalStart(param: any) {
@@ -74,8 +74,12 @@ export class CProduct extends CUqBase {
         this.openVPage(VProduct, { productData, product });
     }
 
-    renderPrice = async (productId: number, packId: BoxId, salesRegion: number) => {
+    renderProductPrice = (product: BoxId) => {
+        return this.renderView(VProductPrice, product);
+    }
 
+    getProductPrice = async (productId: number, salesRegionId: number) => {
+        return await this.uqs.product.PriceX.table({ product: productId, salesRegion: salesRegionId });
     }
 
     renderDeliveryTime = (pack: BoxId) => {
@@ -83,39 +87,31 @@ export class CProduct extends CUqBase {
     }
 
     getInventoryAllocation = async (productId: number, packId: number, salesRegionId: number) => {
-        if (this.inventoryAllocationContainer[packId] === undefined)
-            this.inventoryAllocationContainer[packId] = await this.uqs.warehouse.GetInventoryAllocation.table({ product: productId, pack: packId, salesRegion: this.cApp.currentSalesRegion });
+        return await this.uqs.warehouse.GetInventoryAllocation.table({ product: productId, pack: packId, salesRegion: this.cApp.currentSalesRegion });
     }
 
     getFutureDeliveryTimeDescription = async (productId: number, salesRegionId: number) => {
-        if (this.futureDeliveryTimeDescriptionContainer[productId] === undefined) {
+        let cacheId = productId + '_' + salesRegionId;
+        if (this.futureDeliveryTimeDescriptionContainer[cacheId] === undefined) {
             let futureDeliveryTime = await this.uqs.product.GetFutureDeliveryTime.table({ product: productId, salesRegion: salesRegionId });
             if (futureDeliveryTime.length > 0) {
                 let { minValue, maxValue, unit, deliveryTimeDescription } = futureDeliveryTime[0];
-                this.futureDeliveryTimeDescriptionContainer[productId] = minValue + (maxValue > minValue ? '~' + maxValue : '') + ' ' + unit;
+                this.futureDeliveryTimeDescriptionContainer[cacheId] = minValue + (maxValue > minValue ? '~' + maxValue : '') + ' ' + unit;
+            } else {
+                this.futureDeliveryTimeDescriptionContainer[cacheId] = null;
             }
         }
+        return this.futureDeliveryTimeDescriptionContainer[cacheId];
     }
 
     renderChemicalInfo = (product: BoxId) => {
         return this.renderView(VChemicalInfo, product);
     }
 
-    getChemicalInfo = (productId: number):any => {
-        let ret = this.chemicalInfoContainer[productId];
-        if (ret !== undefined) return ret;
-        this.loadChemicalInfo(productId);
-        return undefined;
-        /*
+    getChemicalInfo = async (productId: number) => {
         if (this.chemicalInfoContainer[productId] === undefined) {
             this.chemicalInfoContainer[productId] = await this.uqs.product.ProductChemical.obj({ product: productId });
-        }*/
-    }
-
-    private async loadChemicalInfo(productId: number):Promise<void> {
-        let ci = this.chemicalInfoContainer[productId];
-        if (ci === undefined) return;
-        this.chemicalInfoContainer[productId] = await this.uqs.product.ProductChemical.obj({ product: productId });
+        }
     }
 
     renderCartProduct = (product: BoxId) => {

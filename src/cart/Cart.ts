@@ -1,6 +1,6 @@
 import { observable, autorun, IReactionDisposer } from 'mobx';
-import _ from 'lodash';
-import { Action, Query, TuidDiv, BoxId, Tuid } from 'tonva';
+//import _ from 'lodash';
+import { BoxId } from 'tonva';
 //import { CCartApp } from '../CCartApp';
 import { PackRow } from 'product/Product';
 import { groupByProduct } from 'tools/groupByProduct';

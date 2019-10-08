@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { observable } from 'mobx';
 import { observer } from 'mobx-react';
-import { VPage, Page, UiSchema, UiInputItem, Form, Context, tv, BoxId, FA } from 'tonva';
+import { VPage, Page, UiSchema, UiInputItem, Form, Context, FA } from 'tonva';
 import { Schema } from 'tonva';
 import { CInvoiceInfo } from './CInvoiceInfo';
 
@@ -129,6 +129,8 @@ export class VInvoiceInfo extends VPage<CInvoiceInfo> {
         if (invoiceInfo) {
             invoiceInfo.assure();
             this.invoiceInfoData = { ...invoiceInfo.obj };
+        } else {
+            this.invoiceInfoData = { 'title': this.controller.cApp.currentUser.defaultOrganizationName };
         }
         this.openPage(this.page);
     }

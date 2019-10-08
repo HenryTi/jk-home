@@ -17,6 +17,7 @@ export class Order {
     @observable freightFee: number;
     @observable freightFeeRemitted: number;
 
+    /*
     @computed get amount() {
         return parseFloat((this.orderItems.reduce((pv, cv) => (pv + cv.subAmount), 0) +
             (this.freightFee ? this.freightFee : 0) +
@@ -24,13 +25,23 @@ export class Order {
             (this.couponOffsetAmount ? this.couponOffsetAmount : 0) +
             (this.couponRemitted ? this.couponRemitted : 0)).toFixed(2));
     };
+    */
+    @computed get amount() {
+        return parseFloat((this.orderItems.reduce((pv, cv) => (pv + cv.subAmount), 0) +
+            (this.freightFee ? this.freightFee : 0) +
+            (this.freightFeeRemitted ? this.freightFeeRemitted : 0)).toFixed(2));
+    };
+    // @computed get productAmount() {
+    //     return parseFloat(this.orderItems.reduce((pv, cv) => pv + cv.subAmount, 0).toFixed(2));
+    // };
     @computed get productAmount() {
-        return parseFloat(this.orderItems.reduce((pv, cv) => pv + cv.subAmount, 0).toFixed(2));
+        return parseFloat(this.orderItems.reduce((pv, cv) => pv + cv.subListAmount, 0).toFixed(2));
     };
     currency: BoxId;
     @observable coupon: BoxId;
     @observable couponOffsetAmount: number;
     @observable couponRemitted: number;
+    salesRegion: BoxId;
 
     getDataForSave() {
         let orderItems: any[] = [];
@@ -53,10 +64,13 @@ export class Order {
             invoiceInfo: this.invoiceInfo,
             amount: this.amount,
             currency: this.currency,
+            freightFee: this.freightFee,
+            freightFeeRemitted: this.freightFeeRemitted,
             coupon: this.coupon,
             couponOffsetAmount: this.couponOffsetAmount,
             couponRemitted: this.couponRemitted,
             orderitems: orderItems, // 前面的必须是小写的orderitems
+            salesRegion: this.salesRegion,
         }
     }
 }
@@ -70,13 +84,9 @@ export class OrderItem {
             return p + c.price * c.quantity
         }, 0);
     }
-    /*
-    pack: BoxId;
-
-    @observable price: number;
-    @observable quantity: number;
-    @computed get subAmount() {
-        return this.price * this.quantity;
+    @computed get subListAmount() {
+        return this.packs.reduce((p, c) => {
+            return p + c.retail * c.quantity
+        }, 0);
     }
-    */
 }

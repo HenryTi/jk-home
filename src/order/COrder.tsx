@@ -1,19 +1,16 @@
 import { observable } from 'mobx';
-import { Sheet, BoxId, Query, Action, Tuid, Map } from 'tonva';
-import { Controller, nav } from 'tonva';
-//import { CCartApp } from 'CCartApp';
-import { CApp } from '../CApp';
+import { BoxId } from 'tonva';
+import { nav } from 'tonva';
+//import { CApp } from '../CApp';
 import { CUqBase } from '../CBase';
 import { VCreateOrder } from './VCreateOrder';
 import { Order, OrderItem } from './Order';
 import { OrderSuccess } from './OrderSuccess';
-import { CSelectShippingContact, CSelectInvoiceContact, CSelectContact } from '../customer/CSelectContact';
+import { CSelectShippingContact, CSelectInvoiceContact } from '../customer/CSelectContact';
 import { VMyOrders } from './VMyOrders';
 import { VOrderDetail } from './VOrderDetail';
-//import { WebUser } from '../CurrentUser';
 import { CInvoiceInfo } from '../customer/CInvoiceInfo';
 import { groupByProduct } from '../tools/groupByProduct';
-import { LoaderProductWithChemical } from '../product/itemLoader';
 import { CCoupon } from './CCoupon';
 import { CartItem2 } from '../cart/Cart';
 
@@ -21,7 +18,6 @@ const FREIGHTFEEFIXED = 12;
 const FREIGHTFEEREMITTEDSTARTPOINT = 100;
 
 export class COrder extends CUqBase {
-    //private cApp: CCartApp;
     //cApp: CApp;
     @observable orderData: Order = new Order();
     @observable couponData: any = {};
@@ -33,8 +29,9 @@ export class COrder extends CUqBase {
     }
 
     private createOrderFromCart = async (cartItems: CartItem2[]) => {
-        let { currentUser } = this.cApp;
+        let { currentUser, currentSalesRegion } = this.cApp;
         this.orderData.webUser = currentUser.id;
+        this.orderData.salesRegion = currentSalesRegion.id;
         this.removeCoupon();
         if (currentUser.currentCustomer !== undefined) {
             this.orderData.customer = currentUser.currentCustomer.id;
@@ -58,10 +55,13 @@ export class COrder extends CUqBase {
 
         if (cartItems !== undefined && cartItems.length > 0) {
             this.orderData.currency = cartItems[0].packs[0].currency;
-            this.orderData.orderItems = cartItems.map((element: any, index: number) => {
+            this.orderData.orderItems = cartItems.map((e: any) => {
                 var item = new OrderItem();
-                item.product = element.product;
-                item.packs = element.packs.filter((v:any) => v.quantity > 0);
+                item.product = e.product;
+                item.packs = e.packs.map((v:any) => { return { ...v } }).filter((v:any) => v.quantity > 0 && v.price);
+                item.packs.forEach((pk) => {
+                    pk.retail = pk.price;
+                })
                 return item;
             });
 
@@ -132,26 +132,13 @@ export class COrder extends CUqBase {
         this.openVPage(OrderSuccess, result);
     }
 
-    /*
-    private onSelectContact = async (
-        typeSelectContact: new (cApp: CCartApp, res: any, autoSelectMode: boolean) => CSelectContact,
-    ) => {
-        let cSelectContact = new typeSelectContact(this.cApp, undefined, true);
-        let contact = await cSelectContact.call<any>();
-        return contact;
-    }
-    */
     onSelectShippingContact = async () => {
-        //let typeSelectContact: new (cApp: CCartApp, res: any, autoSelectMode: boolean) => CSelectContact = CSelectShippingContact;
-        //let contactBox = await this.onSelectContact(typeSelectContact);
         let cSelect = this.newC(CSelectShippingContact);
         let contactBox = await cSelect.call<BoxId>(true);
         this.orderData.shippingContact = contactBox;
     }
 
     onSelectInvoiceContact = async () => {
-        //let typeSelectContact: new (cApp: CCartApp, res: any, autoSelectMode: boolean) => CSelectContact = CSelectInvoiceContact;
-        //let contactBox = await this.onSelectContact(typeSelectContact);
         let cSelect = this.newC(CSelectInvoiceContact);
         let contactBox = await cSelect.call<BoxId>(true);
         this.orderData.invoiceContact = contactBox;
@@ -166,7 +153,7 @@ export class COrder extends CUqBase {
     }
 
     /**
-     *
+     * 使用优惠券后计算折扣金额和抵扣额
      */
     applyCoupon = async (coupon: any) => {
 
@@ -175,34 +162,40 @@ export class COrder extends CUqBase {
             this.orderData.coupon = id;
             this.couponData = coupon;
             if (discount) {
-                this.orderData.couponOffsetAmount = Math.round(this.orderData.productAmount * discount) * -1;
-                /*
+                // this.orderData.couponOffsetAmount = Math.round(this.orderData.productAmount * discount) * -1;
                 let { orderItems } = this.orderData;
                 if (orderItems !== undefined && orderItems.length > 0) {
                     let promises: PromiseLike<any>[] = [];
                     orderItems.forEach(e => {
-                        promises.push(this.priceMap.table({ product: e.product.id, salesRegion: 1 }));
+                        promises.push(this.uqs.product.AgentPrice.table({ product: e.product.id, salesRegion: this.cApp.currentSalesRegion.id }));
                     });
-                    let prices = await Promise.all(promises);
-
-                    for (let i = 0; i < orderItems.length; i++) {
-                        let oi = orderItems[i];
-                        let eachPrices = prices[i];
-                        let { product, packs } = oi;
-                        for (let j = 0; j < packs.length; j++) {
-                            let pk = packs[j];
-                            let price: any = eachPrices.find(
-                                p => p.product.id === product.id &&
-                                    p.pack.id === pk.pack.id &&
-                                    p.discountinued === 0 &&
-                                    p.expireDate > Date.now());
-                            if (price) {
-                                pk.price = Math.round(price.retail * (1 - discount));
-                            }
+                    let agentPrices = await Promise.all(promises);
+                    if (agentPrices && agentPrices.length > 0) {
+                        let couponOffsetAmount = 0;
+                        for (let i = 0; i < orderItems.length; i++) {
+                            let oi = orderItems[i];
+                            let { product, packs } = oi;
+                            let eachProductAgentPrice = agentPrices[i];
+                            for (let j = 0; j < packs.length; j++) {
+                                let pk = packs[j];
+                                let agentPrice: any = eachProductAgentPrice.find(
+                                    (p:any) => p.product.id === product.id &&
+                                        p.pack.id === pk.pack.id &&
+                                        p.discountinued === 0 &&
+                                        p.expireDate > Date.now());
+                                if (!agentPrice) break;
+                                pk.price = Math.round(Math.max(agentPrice.agentPrice, pk.retail * (1 - discount)));
+                                couponOffsetAmount += Math.round(pk.quantity * (pk.retail - pk.price) * -1);
+                                /*
+                                if (agentPrice) {
+                                    pk.price = Math.round(agentPrice.retail * (1 - discount));
+                                }
+                                */
+                            };
                         };
+                        this.orderData.couponOffsetAmount = Math.round(couponOffsetAmount);
                     };
                 }
-                */
             }
             if (preferential) {
                 this.orderData.couponRemitted = preferential * -1;
@@ -214,6 +207,9 @@ export class COrder extends CUqBase {
         }
     }
 
+    /**
+     * 删除优惠券
+     */
     removeCoupon = () => {
         this.orderData.coupon = undefined;
         this.couponData = {};
@@ -238,13 +234,16 @@ export class COrder extends CUqBase {
         switch (state) {
             case 'pendingpayment':
                 return await this.uqs.order.GetPendingPayment.table(undefined);
-                break;
+            case 'processing':
+                return await this.uqs.order.Order.mySheets(undefined, 1, -20);
             default:
-                return await this.uqs.order.Order.mySheets(undefined, 1, 20);
-                break;
+                return await this.uqs.order.Order.mySheets("#", 1, -20)
         }
     }
 
+    /**
+     * 打开发票信息编辑界面
+     */
     onInvoiceInfoEdit = async () => {
         let cInvoiceInfo = this.newC(CInvoiceInfo); // new CInvoiceInfo(this.cApp, undefined, true);
         let { invoiceType, invoiceInfo } = this.orderData;
@@ -263,11 +262,6 @@ export class COrder extends CUqBase {
         let { data } = order;
         let { orderitems } = data;
         let orderItemsGrouped = groupByProduct(orderitems);
-        let loaderProduct = new LoaderProductWithChemical(this.cApp);
-        for (let i = 0; i < orderItemsGrouped.length; i++) {
-            let productId = orderItemsGrouped[i].product.id;
-            orderItemsGrouped[i].product = await loaderProduct.load(productId);
-        }
         data.orderItems = orderItemsGrouped;
         this.openVPage(VOrderDetail, order);
     }

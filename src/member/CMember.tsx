@@ -3,9 +3,9 @@ import * as React from 'react';
 import { observable } from 'mobx';
 import { observer } from 'mobx-react';
 import { FA } from 'tonva';
-import { Controller, Loading, nav } from 'tonva';
-import { Action, Map, BoxId } from 'tonva';
-import { CApp } from '../CApp';
+import { Loading, nav } from 'tonva';
+import { BoxId } from 'tonva';
+//import { CApp } from '../CApp';
 import { CUqBase } from '../CBase';
 import { VMember } from './VMember';
 //import { CCartApp } from 'CCartApp';
@@ -17,31 +17,11 @@ export class CMember extends CUqBase {
     //cApp: CApp;
     @observable member: any;
     private referrer: BoxId;
-    //private memberAction: Action;
-    //private memberRecommenverMap: Map;
-
-    /*
-    constructor(cApp: CCartApp, res: any) {
-        super(res);
-
-        this.cApp = cApp;
-        let { cUqMember } = cApp;
-        this.memberAction = cUqMember.action('MemberAction');
-        this.memberRecommenverMap = cUqMember.map('MemberRecommender');
-    }
-    */
-    /*
-    protected init() {
-        let { cUqMember } = this.cApp;
-        this.memberAction = cUqMember.action('MemberAction');
-        this.memberRecommenverMap = cUqMember.map('MemberRecommender');
-    }
-    */
 
     protected async internalStart(param: any) {
 
         if (this.isLogined) {
-            let {member} = this.uqs;
+            let { member } = this.uqs;
             let { id: currentUserId } = this.user;
             let promises: PromiseLike<any>[] = [];
             promises.push(member.MemberAction.submit({}));
@@ -87,7 +67,7 @@ export class CMember extends CUqBase {
             // 这个逻辑我认为应该是在服务端，写入的时候要给双方积分，给多少积分的逻辑，也应该在后端，从邀请码到拥有此邀请码
             // 的会员id之间的转换，逻辑也应该在后台，这个后端的逻辑写在ACTION中？
             if (!this.referrer) {
-                let { id: currentUserId } = this.user;
+                //let { id: currentUserId } = this.user;
             }
         }
     }

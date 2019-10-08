@@ -1,8 +1,6 @@
-//import * as React from 'react';
 import _ from 'lodash';
 import { Context } from 'tonva';
-//import { CCartApp } from 'CCartApp';
-import { CApp } from '../CApp';
+//import { CApp } from '../CApp';
 import { CUqBase } from '../CBase';
 import { VMe } from './VMe';
 import { CSelectShippingContact } from '../customer/CSelectContact';
@@ -12,16 +10,6 @@ import { CAddress } from '../customer/CAddress';
 
 export class CMe extends CUqBase {
     //cApp: CApp;
-    /*
-    cApp: CCartApp;
-
-    constructor(cApp: CCartApp, res: any) {
-        super(res);
-
-        this.cApp = cApp;
-    }
-    */
-
     protected async internalStart() {
 
     }
@@ -59,6 +47,11 @@ export class CMe extends CUqBase {
 
     openMeInfoFirstOrder = async () => {
         await this.openVPage(EditMeInfoFirstOrder);
+    }
+
+    doCheckout = async () => {
+        let { cCart } = this.cApp;
+        await cCart.doCheckOut();
     }
 
     pickAddress = async (context: Context, name: string, value: number): Promise<number> => {

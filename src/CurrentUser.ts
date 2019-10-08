@@ -18,6 +18,37 @@ export class WebUser {
     @observable organizationName: string;
     departmentName: string;
 
+    get defaultOrganizationName(): string {
+        return this.organizationName ||
+            (this.webUserSettings &&
+                ((
+                    (this.webUserSettings.invoiceInfo && this.webUserSettings.invoiceInfo.obj['title'])
+                    || this.webUserSettings.shippingContact && this.webUserSettings.shippingContact.obj['organizationName'])
+                    || (this.webUserSettings.invoiceContact && this.webUserSettings.invoiceContact.obj['organizationName'])
+                )
+            );
+    }
+
+    get defaultName(): string {
+        return this.firstName ||
+            (this.webUserSettings &&
+                ((
+                    this.webUserSettings.shippingContact && this.webUserSettings.shippingContact.obj['name'])
+                    || (this.webUserSettings.invoiceContact && this.webUserSettings.invoiceContact.obj['name'])
+                )
+            );
+    }
+
+    get defaultMobile(): string {
+        return this.mobile ||
+            (this.webUserSettings &&
+                ((
+                    this.webUserSettings.shippingContact && this.webUserSettings.shippingContact.obj['mobile'])
+                    || (this.webUserSettings.invoiceContact && this.webUserSettings.invoiceContact.obj['mobile'])
+                )
+            );
+    }
+
     telephone: string;
     @observable mobile: string;
     email: string;
@@ -67,7 +98,7 @@ export class WebUser {
                 this.organizationName = organizationName;
                 this.departmentName = departmentName;
             }
-            let contact = await this.uqs.webuser.WebUserContact.obj({ webUser: this.id });
+            let contact = await this.uqs.webuser.WebUserContact.obj({ "webUser": id });
             if (contact) {
                 let { telephone, mobile, email, fax, address, addressString, zipCode } = contact;
                 this.telephone = telephone;
@@ -78,8 +109,8 @@ export class WebUser {
                 this.addressString = addressString;
                 this.zipCode = zipCode;
             }
-            this.webUserSettings = await this.uqs.webuser.WebUserSetting.obj({ webUser: this.id }) || { webUser: this.id };
-            let value = await this.uqs.webuser.WebUserCustomer.obj({ webUser: this.id });
+            this.webUserSettings = await this.uqs.webuser.WebUserSetting.obj({ webUser: id }) || { webUser: id };
+            let value = await this.uqs.webuser.WebUserCustomer.obj({ webUser: id });
             if (value != undefined) {
                 this.currentCustomer = new Customer(value.customer, this.uqs);
                 await this.currentCustomer.init();
@@ -112,6 +143,27 @@ export class WebUser {
         }
         */
         await this.uqs.webuser.WebUserContacts.add({ webUser: this.id, arr1: [{ contact: contactId }] });
+    }
+
+    async addContactFromAccount() {
+        let { firstName, organizationName, mobile, telephone, email, address, addressString } = this;
+        if (firstName && organizationName && mobile && address && addressString) {
+            let newContact = await this.uqs.customer.Contact.save(undefined, {
+                name: firstName,
+                organizationName: organizationName,
+                mobile: mobile,
+                telephone: telephone,
+                email: email,
+                address: address,
+                addressString: addressString
+            })
+            if (newContact) {
+                let { id: newContactId } = newContact;
+                await this.addContact(newContactId);
+                let newContactBox = this.uqs.customer.Contact.boxId(newContactId);
+                this.setDefaultShippingContact(newContactBox);
+            }
+        }
     }
 
     async delContact(contactId: number) {
@@ -187,20 +239,13 @@ export class WebUser {
 
 export class Customer {
     private readonly uqs: UQs;
-    //private contactMap: Map;
     id: number;
-
-    //private customerSettingMap: Map;
 
     private customerSettings: any;
 
     constructor(customer: BoxId, uqs: UQs) {
         this.id = customer.id;
         this.uqs = uqs;
-        /*
-        this.contactMap = cUsqCustomer.map('customerContacts');
-        this.customerSettingMap = cUsqCustomer.map('customerSetting');
-        */
     };
 
     async getContacts(): Promise<any[]> {

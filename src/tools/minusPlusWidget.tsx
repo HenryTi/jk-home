@@ -57,7 +57,7 @@ export class MinusPlusWidget extends UpdownWidget {
     private renderContent = observer((): JSX.Element => {
         let renderTemplet = this.renderTemplet();
         if (renderTemplet !== undefined) return renderTemplet;
-        let cn:any = {
+        let cn:{[name:string]:any} = {
             //'form-control': true,
         };
         if (this.hasError === true) {
@@ -68,7 +68,7 @@ export class MinusPlusWidget extends UpdownWidget {
         }
         let hasFocus = this.hasFocus; // document.hasFocus() && document.activeElement === this.input;
         let hasAction = this.readOnly !== true && this.disabled !== true;
-        let hasValue = this.value !== NaN && this.value !== undefined && this.value > 0;
+        let hasValue = isNaN(this.value) === false && this.value !== undefined && this.value > 0;
         let cursorPointer: string,
             minusColor: string, minusClick: any,
             plusColor: string, plusClick: any;
@@ -84,7 +84,7 @@ export class MinusPlusWidget extends UpdownWidget {
         }
         let minus = <i className={classNames('fa',
             'fa-minus-circle', 'fa-lg', minusColor, cursorPointer,
-            { invisible: !(hasFocus === true || hasAction === true && hasValue === true) })}
+            { invisible: !(hasFocus === true || (hasAction === true && hasValue === true)) })}
             onClick={minusClick} />;
         let input = <input ref={this.ref}
             className={classNames(this.className, cn, 'mx-1 w-4c form-control',

@@ -6,6 +6,7 @@ import { VCategory } from './VCategory';
 
 export class CProductCategory extends CUqBase {
 
+    //cApp: CApp;
     @observable categories: any[] = [];
     @observable categories2: any[] = [];
 

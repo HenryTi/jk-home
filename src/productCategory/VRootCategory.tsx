@@ -3,7 +3,7 @@ import { View, tv } from 'tonva';
 import { CProductCategory } from './CProductCategory';
 import { FA } from 'tonva';
 import { observer } from 'mobx-react';
-import { GLOABLE } from 'ui';
+import { GLOABLE } from 'configuration';
 
 const imgStyle: React.CSSProperties = {
     height: '1.5rem', width: '1.5rem',
@@ -33,7 +33,7 @@ export class VRootCategory extends View<CProductCategory> {
     private renderRootCategory = (item: any, parent: any) => {
         let { name, children, productCategory } = item;
         let { id: productCategoryID } = productCategory;
-        let { src, labelColor } = (GLOABLE.ROOTCATEGORY as any)[productCategoryID as string];
+        let { src, labelColor } = (GLOABLE.ROOTCATEGORY as any)[productCategoryID];
         return <div className="bg-white mb-3" key={name}>
             <div className="py-2 px-3 cursor-pointer" onClick={() => this.categoryClick(item, undefined, labelColor)}>
                 <img className="mr-5" src={src} alt={name} style={{ height: "2.5rem", width: "2.5rem" }} />
@@ -49,17 +49,17 @@ export class VRootCategory extends View<CProductCategory> {
         </div>
     }
 
-    private renderSubCategory = (item: any, parent: any, color: string) => {
+    private renderSubCategory = (item: any, parent: any, labelColor: string) => {
         let { name, children, total } = item;
         return <div key={name}
             className="col-6 col-md-4 col-lg-3 cursor-pointer"
-            onClick={() => this.categoryClick(item, parent, color)}>
-            <div className="py-3 px-2"
+            onClick={() => this.categoryClick(item, parent, labelColor)}>
+            <div className="py-2 px-2"
                 style={{ border: '1px solid #eeeeee', marginRight: '-1px', marginBottom: '-1px' }}
             >
                 <div style={titleTitle}>
                     <span className="ml-1 align-middle">
-                        <FA name="chevron-circle-right" className={color} />
+                        <FA name="chevron-circle-right" className={labelColor} />
                         &nbsp; {name}
                     </span>
                 </div>
@@ -88,7 +88,8 @@ export class VRootCategory extends View<CProductCategory> {
 
 
 export function renderThirdCategory(items: any, total: number) {
-    return <div className="py-2 px-1 text-muted small" style={subStyle}>
-        {items.length === 0 ? <>该类产品数量: {total > 1000 ? '>1000' : total}</> : items.map((v:any) => v.name).join(' / ')}
+    return <div className="py-1 px-1 text-muted small" style={subStyle}>
+        {items.length === 0 ? <>该类产品数量: {total > 1000 ? '>1000' : total}</> 
+            : items.map((v:any) => v.name).join(' / ')}
     </div>
 }

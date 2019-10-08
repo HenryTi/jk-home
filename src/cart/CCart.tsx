@@ -67,7 +67,7 @@ export class CCart extends CUqBase {
     /**
      * 导航到CheckOut界面
      */
-    private doCheckOut = async () => {
+    doCheckOut = async () => {
 
         let { cOrder } = this.cApp;
         if (this.selectedCartItems === undefined) return;
