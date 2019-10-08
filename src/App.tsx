@@ -10,6 +10,7 @@ export const appConfig: AppConfig = {
   version: "1.0.1",                   // 版本变化，缓存的uqs才会重载
   tvs: tvs,
   loginTop: jnkTop,
+  oem: '百灵威',
 };
 
 nav.setSettings(appConfig);

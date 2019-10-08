@@ -101,10 +101,21 @@ export class CProduct extends CUqBase {
         return this.renderView(VChemicalInfo, product);
     }
 
-    getChemicalInfo = async (productId: number) => {
+    getChemicalInfo = (productId: number):any => {
+        let ret = this.chemicalInfoContainer[productId];
+        if (ret !== undefined) return ret;
+        this.loadChemicalInfo(productId);
+        return undefined;
+        /*
         if (this.chemicalInfoContainer[productId] === undefined) {
             this.chemicalInfoContainer[productId] = await this.uqs.product.ProductChemical.obj({ product: productId });
-        }
+        }*/
+    }
+
+    private async loadChemicalInfo(productId: number):Promise<void> {
+        let ci = this.chemicalInfoContainer[productId];
+        if (ci === undefined) return;
+        this.chemicalInfoContainer[productId] = await this.uqs.product.ProductChemical.obj({ product: productId });
     }
 
     renderCartProduct = (product: BoxId) => {
